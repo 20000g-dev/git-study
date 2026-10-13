@@ -1,0 +1,20 @@
+﻿category,item,value
+summary,전체 탑승 건수,2000.0
+summary,환승 추정 건수,57.0
+summary,환승 비율(%),2.85
+route_pair_top5,105번 -> 101번,7.0
+route_pair_top5,104번 -> 103번,6.0
+route_pair_top5,101번 -> 104번,6.0
+route_pair_top5,104번 -> 101번,4.0
+route_pair_top5,103번 -> 101번,4.0
+stop_top5,대학로,13.0
+stop_top5,중앙시장,10.0
+stop_top5,시청앞,10.0
+stop_top5,병원앞,5.0
+stop_top5,신도시,4.0
+wait_dist_min,"(-0.001, 5.0]",11.0
+wait_dist_min,"(5.0, 10.0]",7.0
+wait_dist_min,"(10.0, 15.0]",4.0
+wait_dist_min,"(15.0, 20.0]",11.0
+wait_dist_min,"(20.0, 25.0]",14.0
+wait_dist_min,"(25.0, 30.0]",10.0
