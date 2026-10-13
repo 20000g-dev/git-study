@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>정류장별 시간대 승하차 히트맵</title>
+<style>
+  :root { --bg:#ffffff; --fg:#1f2328; --muted:#656d76; --line:#d0d7de; --accent:#0969da; }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) { --bg:#0d1117; --fg:#e6edf3; --muted:#8b949e; --line:#30363d; --accent:#58a6ff; }
+  }
+  :root[data-theme="dark"] { --bg:#0d1117; --fg:#e6edf3; --muted:#8b949e; --line:#30363d; --accent:#58a6ff; }
+  body { margin:0; background:var(--bg); color:var(--fg); font-family:system-ui,-apple-system,"Malgun Gothic",sans-serif; }
+  main { padding:16px; max-width:1100px; margin:0 auto; }
+  h1 { font-size:20px; margin:4px 0 6px; }
+  .meta { color:var(--muted); font-size:13px; margin-bottom:12px; }
+  .tabs { display:flex; gap:8px; margin-bottom:12px; }
+  .tabs button { font:inherit; padding:6px 14px; border:1px solid var(--line); border-radius:6px;
+                 background:transparent; color:var(--fg); cursor:pointer; }
+  .tabs button[aria-pressed="true"] { border-color:var(--accent); color:var(--accent); font-weight:600; }
+  .wrap { overflow-x:auto; }
+  table { border-collapse:separate; border-spacing:2px; font-size:12px; }
+  th { font-weight:500; color:var(--muted); padding:0 4px; white-space:nowrap; }
+  th.row { text-align:right; color:var(--fg); }
+  td.cell { width:26px; height:26px; min-width:26px; text-align:center; border-radius:3px;
+            font-variant-numeric:tabular-nums; }
+  .legend { display:flex; align-items:center; gap:8px; margin-top:12px; font-size:12px; color:var(--muted); }
+  .legend .bar { width:160px; height:10px; border-radius:3px;
+                 background:linear-gradient(to right, var(--lo), var(--hi)); }
+</style>
+</head>
+<body>
+<main>
+  <h1>정류장별 시간대 승하차 히트맵</h1>
+  <div class="meta" id="meta"></div>
+  <div class="tabs" role="group" aria-label="지표 선택">
+    <button type="button" data-mode="board" aria-pressed="true">승차</button>
+    <button type="button" data-mode="alight" aria-pressed="false">하차</button>
+  </div>
+  <div class="wrap"><table id="grid"></table></div>
+  <div class="legend"><span>적음</span><span class="bar"></span><span>많음</span></div>
+</main>
+<script>
+const DATA = {"period": "2026-10-05 ~ 2026-10-11 (7일)", "hours": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23], "stops": [{"id": "S008", "name": "버스터미널"}, {"id": "S001", "name": "시청앞"}, {"id": "S004", "name": "대학로"}, {"id": "S002", "name": "중앙시장"}, {"id": "S007", "name": "체육관"}, {"id": "S003", "name": "역사공원"}, {"id": "S009", "name": "신도시"}, {"id": "S005", "name": "병원앞"}, {"id": "S011", "name": "산업단지"}, {"id": "S012", "name": "공항입구"}, {"id": "S006", "name": "도서관"}, {"id": "S010", "name": "강변마을"}], "board": [[0, 0, 0, 0, 0, 4, 24, 25, 21, 13, 12, 6, 8, 8, 11, 14, 16, 23, 20, 6, 5, 4, 3, 2], [0, 0, 0, 0, 0, 8, 15, 28, 15, 5, 7, 10, 5, 4, 16, 12, 24, 26, 16, 10, 3, 6, 2, 1], [0, 0, 0, 0, 0, 4, 10, 26, 11, 5, 8, 8, 4, 4, 1, 6, 13, 19, 9, 3, 6, 2, 1, 2], [0, 0, 0, 0, 0, 5, 14, 26, 14, 9, 7, 9, 2, 7, 8, 10, 22, 23, 13, 6, 9, 8, 1, 0], [0, 0, 0, 0, 0, 9, 15, 25, 16, 6, 6, 4, 7, 5, 9, 4, 19, 17, 12, 5, 7, 8, 5, 2], [0, 0, 0, 0, 0, 5, 26, 29, 19, 13, 9, 11, 13, 12, 5, 17, 18, 20, 14, 6, 9, 10, 5, 0], [0, 0, 0, 0, 0, 2, 14, 21, 17, 8, 8, 4, 6, 5, 3, 15, 17, 10, 16, 5, 8, 3, 4, 0], [0, 0, 0, 0, 0, 9, 11, 10, 7, 7, 5, 6, 8, 6, 5, 6, 9, 7, 6, 4, 3, 1, 2, 4], [0, 0, 0, 0, 0, 4, 12, 21, 12, 5, 7, 5, 8, 13, 7, 10, 11, 20, 9, 10, 10, 4, 2, 2], [0, 0, 0, 0, 0, 9, 9, 16, 17, 12, 4, 4, 7, 9, 5, 8, 11, 6, 10, 8, 15, 6, 4, 2], [0, 0, 0, 0, 0, 5, 10, 25, 14, 7, 4, 5, 3, 7, 7, 8, 15, 18, 5, 3, 4, 1, 3, 2], [0, 0, 0, 0, 0, 2, 1, 3, 5, 1, 0, 1, 0, 2, 3, 3, 7, 5, 4, 1, 2, 1, 1, 1]], "alight": [[1, 0, 0, 0, 0, 14, 18, 34, 22, 19, 15, 11, 9, 15, 14, 16, 38, 37, 24, 17, 16, 13, 2, 5], [2, 0, 0, 0, 0, 6, 15, 35, 27, 15, 10, 12, 10, 14, 11, 13, 25, 23, 20, 6, 11, 8, 6, 6], [0, 0, 0, 0, 0, 8, 25, 44, 27, 13, 19, 10, 15, 12, 15, 15, 29, 30, 25, 10, 10, 8, 3, 2], [0, 0, 0, 0, 0, 6, 20, 24, 9, 11, 5, 9, 6, 3, 5, 12, 17, 16, 10, 10, 10, 4, 6, 0], [0, 0, 0, 0, 0, 4, 13, 25, 10, 10, 6, 12, 8, 8, 8, 4, 16, 22, 14, 9, 10, 3, 3, 3], [0, 0, 0, 0, 0, 3, 4, 12, 17, 7, 6, 2, 3, 3, 4, 12, 7, 8, 14, 3, 6, 4, 2, 3], [0, 0, 0, 0, 0, 5, 14, 25, 29, 6, 8, 7, 7, 8, 10, 10, 12, 16, 14, 5, 6, 8, 3, 1], [0, 0, 0, 0, 0, 5, 20, 20, 19, 6, 7, 5, 6, 6, 5, 10, 18, 14, 8, 6, 4, 6, 4, 2], [0, 0, 0, 0, 0, 0, 2, 11, 7, 4, 0, 0, 1, 4, 2, 2, 2, 7, 7, 3, 1, 3, 0, 1], [0, 0, 0, 0, 0, 0, 7, 4, 2, 5, 3, 3, 1, 2, 6, 4, 6, 6, 2, 4, 2, 5, 0, 0], [0, 0, 0, 0, 0, 3, 3, 5, 2, 6, 1, 3, 2, 1, 2, 5, 3, 2, 4, 2, 1, 0, 0, 0], [0, 0, 0, 0, 0, 4, 3, 9, 3, 4, 2, 0, 2, 1, 1, 0, 3, 4, 2, 0, 5, 0, 1, 1]]};
+const LO = [255, 247, 236], HI = [180, 35, 24];
+
+function mix(t) {
+  const c = LO.map((v, i) => Math.round(v + (HI[i] - v) * t));
+  return `rgb(${c[0]},${c[1]},${c[2]})`;
+}
+
+function render(mode) {
+  const values = DATA[mode];
+  const max = Math.max(1, ...values.flat());
+  const table = document.getElementById("grid");
+  let html = "<thead><tr><th></th>";
+  DATA.hours.forEach(h => html += `<th>${h}</th>`);
+  html += "</tr></thead><tbody>";
+  DATA.stops.forEach((s, i) => {
+    html += `<tr><th class="row" title="${s.id}">${s.name}</th>`;
+    values[i].forEach((v, j) => {
+      const t = v / max;
+      const ink = t > 0.55 ? "#fff" : "var(--fg)";
+      html += `<td class="cell" style="background:${mix(t)};color:${ink}"`
+            + ` title="${s.name} ${DATA.hours[j]}시: ${v}명">${v || ""}</td>`;
+    });
+    html += "</tr>";
+  });
+  table.innerHTML = html + "</tbody>";
+  document.querySelectorAll(".tabs button").forEach(b =>
+    b.setAttribute("aria-pressed", String(b.dataset.mode === mode)));
+  document.getElementById("meta").textContent =
+    `분석 기간 ${DATA.period} · ${mode === "board" ? "승차" : "하차"} 수 (칸 = 정류장 × 시간대, 시 단위)`;
+}
+
+document.querySelectorAll(".tabs button").forEach(b =>
+  b.addEventListener("click", () => render(b.dataset.mode)));
+render("board");
+</script>
+</body>
+</html>
